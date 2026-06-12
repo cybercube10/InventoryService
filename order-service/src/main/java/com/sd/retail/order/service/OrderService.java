@@ -3,7 +3,9 @@ package com.sd.retail.order.service;
 import com.sd.retail.commons.enums.OrderStatus;
 import com.sd.retail.commons.dto.OrderItemDTO;
 import com.sd.retail.commons.dto.OrderRequestDTO;
+import com.sd.retail.commons.event.OrderEvent;
 import com.sd.retail.order.exception.InsufficientStockException;
+import com.sd.retail.order.messaging.OrderEventProducer;
 import com.sd.retail.order.repository.OrderItemRepository;
 import com.sd.retail.order.repository.OrderRepository;
 import jakarta.transaction.Transactional;
@@ -16,48 +18,34 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static reactor.netty.http.HttpConnectionLiveness.log;
+
 @Service
 public class OrderService {
     long tenantId = 1L;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final OrderStatusPublisher orderStatusPublisher;
+    private final OrderEventProducer orderEventProducer;
 
-    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,OrderStatusPublisher orderStatusPublisher) {
+    public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderEventProducer orderEventProducer) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
-        this.orderStatusPublisher = orderStatusPublisher;
+        this.orderEventProducer = orderEventProducer;
     }
 
-    @Transactional
     public String createOrder(OrderRequestDTO dto) {
 
         Order order = new Order();
         order.setCustomerName(dto.getCustomerName());
         order.setCustomerPhone(dto.getCustomerPhone());
         order.setTenantId(tenantId);
-
+        order.setTotalAmount(dto.getTotalAmount());
         order.setPaidAmount(dto.getPaidAmount());
         order.setDueAmount(dto.getDueAmount());
-
-    int totalAmt = 0;
-        List<OrderItem> items = new ArrayList<>();
-
-        for (OrderItemDTO orderItemDTO : dto.getOrderItems()) {
-
-            boolean  available = inventoryClient.isStockAvailable(orderItemDTO.getBatchId(),orderItemDTO.getQuantity());
-
-            if(!available){
-                throw new InsufficientStockException("Insufficient stock for"+orderItemDTO.getBatchId());
-            }
-            else totalAmt += inventoryClient.getPrice(orderItemDTO.getBatchId()) * orderItemDTO.getQuantity();
-        }
-        order.setTotalAmount(totalAmt);
         order.setCreatedAt(LocalDateTime.now());
-        order.setStatus(OrderStatus.SUCCESS);
+        order.setStatus(OrderStatus.ORDER_CREATED);
         Order savedOrder = orderRepository.save(order);
 
-        order.setItems(items);
         for(OrderItemDTO item : dto.getOrderItems()){
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(savedOrder);
@@ -67,10 +55,26 @@ public class OrderService {
 //            orderItem.setPricePerUnit(item.getUnitPrice());
             orderItemRepository.save(orderItem);
         }
+        //set id
+        order.setOrderId(savedOrder.getOrderId());
+        //create event
+        OrderEvent orderEvent = new OrderEvent(dto,OrderStatus.ORDER_CREATED);
          // publish kafka topic here of order created
-        dto.setOrderId(savedOrder.getOrderId());
-        orderStatusPublisher.publishOrderEvent(dto,OrderStatus.ORDER_CREATED);
-        return "Order created: " + savedOrder.getOrderId();
+        orderEventProducer.publishOrderEvent(orderEvent);
+        return "Order created: " + savedOrder.getOrderId() + savedOrder.getStatus();
+    }
+
+    public void handleOrderOnStockReservationFailure(Long orderId){
+        Order order = orderRepository.findByOrderID(orderId);
+        if(order != null){
+            order.setStatus(OrderStatus.ORDER_CANCELLED);
+            orderRepository.save(order);
+            log.info("Order Failed: " + order.getOrderId());
+        }
+        else {
+            log.warn("Order not found {}", orderId);
+            return;
+        }
     }
 }
 

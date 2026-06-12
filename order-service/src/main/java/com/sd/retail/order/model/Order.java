@@ -1,6 +1,6 @@
 package com.sd.retail.order.model;
 
-import com.sd.retail.order.enums.OrderStatus;
+import com.sd.retail.commons.enums.OrderStatus;
 import com.sd.retail.order.enums.OrderType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -38,4 +38,6 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items;
+
+
 }
