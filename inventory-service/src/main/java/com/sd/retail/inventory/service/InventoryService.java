@@ -1,14 +1,19 @@
 package com.sd.retail.inventory.service;
 
+import com.sd.retail.commons.dto.OrderItemDTO;
+import com.sd.retail.commons.event.InventoryReserveEvent;
+import com.sd.retail.commons.event.OrderEvent;
 import com.sd.retail.inventory.dto.InventoryItemResponseDTO;
 import com.sd.retail.inventory.dto.InventoryRequestDTO;
 import com.sd.retail.inventory.dto.InventoryResponseDTO;
 import com.sd.retail.inventory.exception.InventoryNotFoundException;
 import com.sd.retail.inventory.exception.ProductNotFoundException;
+import com.sd.retail.inventory.message.InventoryReserveProducer;
 import com.sd.retail.inventory.model.Inventory;
 import com.sd.retail.inventory.model.Product;
 import com.sd.retail.inventory.repository.InventoryRepository;
 import com.sd.retail.inventory.repository.ProductRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,9 +27,11 @@ public class InventoryService {
     Long userId = 1L;
     private final InventoryRepository inventoryRepository;
     private final ProductRepository productRepository;
-    public InventoryService(InventoryRepository inventoryRepository,ProductRepository productRepository) {
+    private final InventoryReserveProducer inventoryReserveProducer;
+    public InventoryService(InventoryRepository inventoryRepository,ProductRepository productRepository,InventoryReserveProducer inventoryReserveProducer) {
         this.inventoryRepository = inventoryRepository;
         this.productRepository = productRepository;
+        this.inventoryReserveProducer = inventoryReserveProducer;
     }
 
     public String addInventory(InventoryRequestDTO inventoryRequestDTO) {
@@ -104,4 +111,25 @@ public class InventoryService {
        return inventory.getAvailableQty() >= qty;
 
     }
+
+    @Transactional
+    public void handleBooking(OrderEvent orderEvent) {
+
+        Long oid = orderEvent.getOrderRequestDTO().getOrderId();
+        UUID batchId = null;
+       for (OrderItemDTO item : orderEvent.getOrderRequestDTO().getOrderItems() ){
+           int updated = inventoryRepository.reserveStock(item.getBatchId(), item.getQuantity());
+
+           if(updated == 0){
+              batchId = item.getBatchId();
+               inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,false,"insufficient stock for batchId"+batchId));
+               throw new RuntimeException("insufficient stock for batchId"+batchId);
+           }
+       }
+        inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,true,"successfully reserved inventory"));
+
+    }
+
+
 }
+

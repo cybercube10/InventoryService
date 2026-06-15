@@ -4,6 +4,8 @@ import com.sd.retail.inventory.model.Inventory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -18,4 +20,14 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
     );
     Page<Inventory> findAllByTenantId(Long tenantId, Pageable pageable);
     Optional<Inventory> findByTenantIdAndBatchID(Long tenantId, UUID  BatchID);
+
+    Inventory findByBatchID(UUID batchId);
+    @Modifying
+    @Query("""
+UPDATE tbl_Inventory i
+SET i.availableQty = i.availableQty - :qty
+WHERE i.batchId = :batchId
+AND i.availableQty >= :qty
+""")
+    int reserveStock(UUID batchId, int qty);
 }

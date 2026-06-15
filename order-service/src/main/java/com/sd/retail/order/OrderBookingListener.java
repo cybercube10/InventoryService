@@ -1,7 +1,6 @@
 package com.sd.retail.order;
 
-import com.sd.retail.commons.event.InventoryEvent;
-import com.sd.retail.order.messaging.OrderEventProducer;
+import com.sd.retail.commons.event.InventoryReserveEvent;
 import com.sd.retail.order.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -20,13 +19,13 @@ public class OrderBookingListener {
    }
 
    @KafkaListener(topics=INVENTORY_RESERVED_TOPIC, groupId = ORDER_BOOKING_GROUP)
-    public void consumeInventoryReserveEvents(InventoryEvent inventoryEvent) {
-       if(inventoryEvent.isReserved()){
-           log.info("inventory reserved for order"+inventoryEvent.getOrderId());
+    public void consumeInventoryReserveEvents(InventoryReserveEvent inventoryReserveEvent) {
+       if(inventoryReserveEvent.isReserved()){
+           log.info("inventory reserved for order"+ inventoryReserveEvent.getOrderId());
        }
        else {
-           log.info("order failed for orderId "+inventoryEvent.getOrderId());
-           orderService.handleOrderOnStockReservationFailure(inventoryEvent.getOrderId());
+           log.info("order failed for orderId "+ inventoryReserveEvent.getOrderId());
+           orderService.handleOrderOnStockReservationFailure(inventoryReserveEvent.getOrderId());
        }
    }
 }
