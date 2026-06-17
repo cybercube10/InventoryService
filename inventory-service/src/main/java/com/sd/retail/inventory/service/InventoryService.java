@@ -125,7 +125,7 @@ public class InventoryService {
            }
 
        }
-       if(!failed){
+       if(failed){
            TransactionAspectSupport.currentTransactionStatus()
                    .setRollbackOnly();
            inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,false,"insuffcicient stock for batchID "+batchId));
