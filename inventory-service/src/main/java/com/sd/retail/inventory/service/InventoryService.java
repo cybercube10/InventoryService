@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -92,8 +93,8 @@ public class InventoryService {
 
 
     public InventoryItemResponseDTO getItemByBatchID (UUID BatchID){
-        Inventory item = inventoryRepository.findByTenantIdAndBatchID(userId,BatchID).orElseThrow(()->new InventoryNotFoundException("item not found"));
-        Product p = productRepository.findByProductID(item.getProduct().getProductId()).orElseThrow(()->new ProductNotFoundException("product doesn't exist"));
+        Inventory item = inventoryRepository.findByTenantIdAndBatchId(userId,BatchID).orElseThrow(()->new InventoryNotFoundException("item not found"));
+        Product p = productRepository.findByProductId(item.getProduct().getProductId()).orElseThrow(()->new ProductNotFoundException("product doesn't exist"));
         InventoryItemResponseDTO inventoryItemResponseDTO = new InventoryItemResponseDTO();
         inventoryItemResponseDTO.setBatchId(BatchID);
         inventoryItemResponseDTO.setProductName(p.getProductName());
@@ -104,7 +105,7 @@ public class InventoryService {
 
 
     public  Boolean getStockAvailability(UUID batchID, int qty) {
-        Inventory inventory = inventoryRepository.findByTenantIdAndBatchID(userId,batchID).orElseThrow(() ->
+        Inventory inventory = inventoryRepository.findByTenantIdAndBatchId(userId,batchID).orElseThrow(() ->
                 new InventoryNotFoundException(
                         "Batch not found"));;
 
@@ -114,17 +115,22 @@ public class InventoryService {
 
     @Transactional
     public void handleBooking(OrderEvent orderEvent) {
-
+        boolean failed = false;
         Long oid = orderEvent.getOrderRequestDTO().getOrderId();
         UUID batchId = null;
        for (OrderItemDTO item : orderEvent.getOrderRequestDTO().getOrderItems() ){
            int updated = inventoryRepository.reserveStock(item.getBatchId(), item.getQuantity());
-
            if(updated == 0){
-              batchId = item.getBatchId();
-               inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,false,"insufficient stock for batchId"+batchId));
-               throw new RuntimeException("insufficient stock for batchId"+batchId);
+               failed = true;
            }
+
+       }
+       if(!failed){
+           TransactionAspectSupport.currentTransactionStatus()
+                   .setRollbackOnly();
+           inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,false,"insuffcicient stock for batchID "+batchId));
+
+           return;
        }
         inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,true,"successfully reserved inventory"));
 

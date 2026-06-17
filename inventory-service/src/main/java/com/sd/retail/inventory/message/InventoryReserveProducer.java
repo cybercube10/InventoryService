@@ -21,7 +21,7 @@ public class InventoryReserveProducer {
         template.send(INVENTORY_RESERVED_TOPIC,String.valueOf(inventoryReserveEvent.getOrderId()),inventoryReserveEvent);
     }
     catch(Exception e){
-        log.error("Error publishing inventory reserve event",e.getMessage());
+        log.error("Error publishing inventory reserve event",e.getMessage(),e);
     }
     }
 

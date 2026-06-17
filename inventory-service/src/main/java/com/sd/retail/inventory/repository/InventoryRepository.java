@@ -19,12 +19,12 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             Pageable pageable
     );
     Page<Inventory> findAllByTenantId(Long tenantId, Pageable pageable);
-    Optional<Inventory> findByTenantIdAndBatchID(Long tenantId, UUID  BatchID);
+    Optional<Inventory> findByTenantIdAndBatchId(Long tenantId, UUID  BatchID);
 
-    Inventory findByBatchID(UUID batchId);
+    Inventory findByBatchId(UUID batchId);
     @Modifying
     @Query("""
-UPDATE tbl_Inventory i
+UPDATE Inventory i
 SET i.availableQty = i.availableQty - :qty
 WHERE i.batchId = :batchId
 AND i.availableQty >= :qty

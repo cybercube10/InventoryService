@@ -16,10 +16,10 @@ public class OrderController {
 
     private final OrderService orderService;
 
-
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
+
 
     @PostMapping("/generate")
     public ResponseEntity<String> generateOrder(@Valid @RequestBody OrderRequestDTO orderRequestDTO) {

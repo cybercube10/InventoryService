@@ -21,6 +21,9 @@ public class InventoryListener {
     @KafkaListener(topics = ORDER_BOOKING_EVENTS_TOPIC,groupId = INVENTORY_EVENT_GROUP)
     public void handleBooking(OrderEvent orderEvent) {
      log.info("Received Order Event reserving stock for order"+orderEvent.getEventId());
+        log.info("here is the order event recieved"+orderEvent);
+
+        log.info("here is the order item recieved"+orderEvent.getOrderRequestDTO().getOrderItems());
      inventoryService.handleBooking(orderEvent);
     }
 

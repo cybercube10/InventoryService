@@ -56,7 +56,7 @@ public class OrderService {
             orderItemRepository.save(orderItem);
         }
         //set id
-        order.setOrderId(savedOrder.getOrderId());
+        dto.setOrderId(savedOrder.getOrderId());
         //create event
         OrderEvent orderEvent = new OrderEvent(dto,OrderStatus.ORDER_CREATED);
          // publish kafka topic here of order created
@@ -65,7 +65,7 @@ public class OrderService {
     }
 
     public void handleOrderOnStockReservationFailure(Long orderId){
-        Order order = orderRepository.findByOrderID(orderId);
+        Order order = orderRepository.findByOrderId(orderId);
         if(order != null){
             order.setStatus(OrderStatus.ORDER_CANCELLED);
             orderRepository.save(order);
@@ -75,6 +75,17 @@ public class OrderService {
             log.warn("Order not found {}", orderId);
             return;
         }
+    }
+
+    public void handleOrderStatus(Long orderId, boolean reserved) {
+        Order order = orderRepository.findByOrderId(orderId);
+    if(reserved){
+        order.setStatus(OrderStatus.ORDER_COMPLETED);
+    }
+    else {
+        order.setStatus(OrderStatus.ORDER_CANCELLED);
+    }
+
     }
 }
 

@@ -13,5 +13,5 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
 
     Page<Product> findAllByTenantId(Long tenantId, Pageable pageable);
 
-    Optional<Product> findByProductID(Long  productId);
+    Optional<Product> findByProductId(Long  productId);
 }

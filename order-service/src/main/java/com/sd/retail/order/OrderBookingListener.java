@@ -22,10 +22,12 @@ public class OrderBookingListener {
     public void consumeInventoryReserveEvents(InventoryReserveEvent inventoryReserveEvent) {
        if(inventoryReserveEvent.isReserved()){
            log.info("inventory reserved for order"+ inventoryReserveEvent.getOrderId());
+
        }
        else {
            log.info("order failed for orderId "+ inventoryReserveEvent.getOrderId());
            orderService.handleOrderOnStockReservationFailure(inventoryReserveEvent.getOrderId());
        }
+       orderService.handleOrderStatus(inventoryReserveEvent.getOrderId(), inventoryReserveEvent.isReserved());
    }
 }

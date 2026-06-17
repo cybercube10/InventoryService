@@ -22,6 +22,6 @@ public class ProductRequestDTO {
     private BigDecimal costPrice;
     @NotNull(message = "price field cannot be null")
     private BigDecimal sellingPrice;
-
+    @NotNull(message = "sku field cannot be null")
     private String sku;
 }
