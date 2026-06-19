@@ -1,5 +1,6 @@
 package com.sd.retail.inventory.service;
 
+import com.sd.retail.commons.dto.ExpiryItemDTO;
 import com.sd.retail.commons.dto.OrderItemDTO;
 import com.sd.retail.commons.event.InventoryReserveEvent;
 import com.sd.retail.commons.event.OrderEvent;
@@ -20,7 +21,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -121,6 +124,7 @@ public class InventoryService {
        for (OrderItemDTO item : orderEvent.getOrderRequestDTO().getOrderItems() ){
            int updated = inventoryRepository.reserveStock(item.getBatchId(), item.getQuantity());
            if(updated == 0){
+               batchId = item.getBatchId();
                failed = true;
            }
 
@@ -133,9 +137,19 @@ public class InventoryService {
            return;
        }
         inventoryReserveProducer.publishInventoryReserveEvent(new InventoryReserveEvent(oid,true,"successfully reserved inventory"));
-
     }
 
 
+    public List<ExpiryItemDTO> findItemsByExpiryDateBetween(LocalDate startDate, LocalDate endDate) {
+        List<Inventory>  items = inventoryRepository.findInventoryByExpiryDateBetween(startDate,endDate);
+         return items.stream().map(inventory -> ExpiryItemDTO.builder()
+                         .productName(inventory.getProduct().getProductName())
+                         .expiryDate(inventory.getExpiryDate())
+                         .quantity(inventory.getAvailableQty())
+                 .batchId(inventory.getBatchId())
+                         .build()
+
+                 ).toList();
+    }
 }
 

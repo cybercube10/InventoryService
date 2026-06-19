@@ -1,5 +1,6 @@
 package com.sd.retail.order.service;
 
+import com.sd.retail.commons.dto.OrderResponseDTO;
 import com.sd.retail.commons.enums.OrderStatus;
 import com.sd.retail.commons.dto.OrderItemDTO;
 import com.sd.retail.commons.dto.OrderRequestDTO;
@@ -12,6 +13,7 @@ import jakarta.transaction.Transactional;
 import com.sd.retail.order.model.Order;
 import com.sd.retail.order.model.OrderItem;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,7 +35,7 @@ public class OrderService {
         this.orderEventProducer = orderEventProducer;
     }
 
-    public String createOrder(OrderRequestDTO dto) {
+    public OrderResponseDTO createOrder(OrderRequestDTO dto) {
 
         Order order = new Order();
         order.setCustomerName(dto.getCustomerName());
@@ -61,7 +63,10 @@ public class OrderService {
         OrderEvent orderEvent = new OrderEvent(dto,OrderStatus.ORDER_CREATED);
          // publish kafka topic here of order created
         orderEventProducer.publishOrderEvent(orderEvent);
-        return "Order created: " + savedOrder.getOrderId() + savedOrder.getStatus();
+        return new OrderResponseDTO(
+                savedOrder.getOrderId(),
+                savedOrder.getStatus()
+        );
     }
 
     public void handleOrderOnStockReservationFailure(Long orderId){
@@ -86,6 +91,15 @@ public class OrderService {
         order.setStatus(OrderStatus.ORDER_CANCELLED);
     }
 
+    }
+
+    public OrderResponseDTO getOrder(long orderId) {
+        Order order = orderRepository.findByOrderId(orderId);
+        OrderResponseDTO orderResponseDTO = new OrderResponseDTO(
+                order.getOrderId(),
+                order.getStatus()
+        );
+        return orderResponseDTO;
     }
 }
 

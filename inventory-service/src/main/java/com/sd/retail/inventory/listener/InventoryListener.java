@@ -24,7 +24,7 @@ public class InventoryListener {
         log.info("here is the order event recieved"+orderEvent);
 
         log.info("here is the order item recieved"+orderEvent.getOrderRequestDTO().getOrderItems());
-     inventoryService.handleBooking(orderEvent);
+          inventoryService.handleBooking(orderEvent);
     }
 
 }

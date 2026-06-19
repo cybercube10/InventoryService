@@ -2,13 +2,11 @@ package com.sd.retail.order.controller;
 
 
 import com.sd.retail.commons.dto.OrderRequestDTO;
+import com.sd.retail.commons.dto.OrderResponseDTO;
 import com.sd.retail.order.service.OrderService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("order/")
@@ -22,9 +20,13 @@ public class OrderController {
 
 
     @PostMapping("/generate")
-    public ResponseEntity<String> generateOrder(@Valid @RequestBody OrderRequestDTO orderRequestDTO) {
-        String response = orderService.createOrder(orderRequestDTO);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<OrderResponseDTO> generateOrder(@Valid @RequestBody OrderRequestDTO orderRequestDTO) {
+        return ResponseEntity.ok(orderService.createOrder(orderRequestDTO));
 
+    }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderResponseDTO> getOrder(@PathVariable("orderId") long orderId) {
+        return ResponseEntity.ok(orderService.getOrder(orderId));
     }
 }
