@@ -28,6 +28,7 @@
         <module>common-dto</module>
         <module>notification-service</module>
         <module>service-registry</module>
+        <module>api-gateway</module>
     </modules>
     <scm>
 		<connection/>
