@@ -54,10 +54,10 @@ Business workflows communicate asynchronously through Apache Kafka instead of ti
 
 # Architecture
 
-```
+
 <img width="652" height="972" alt="hi drawio" src="https://github.com/user-attachments/assets/897e8127-172b-46c6-8440-cbf57235d9d2" />
 
-
+```
 
 Project Structure
 
