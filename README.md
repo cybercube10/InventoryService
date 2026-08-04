@@ -17,7 +17,7 @@ Small retail stores often rely on manual registers to manage inventory and custo
 - Track customer credit
 - Remember repayment deadlines
 
-Smart Dukaan aims to simplify these operations using a distributed microservices architecture.
+Retail Smart aims to simplify these operations using a distributed microservices architecture.
 
 ---
 
